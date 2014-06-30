@@ -1,0 +1,30 @@
+<!--
+http://overpass-turbo.eu/?template=key-value&key=boundary&value=administrative
+23.099694, -127.920781
+51.137831, -66.397344
+-->
+<osm-script output="json" timeout="250">
+  <!-- gather results -->
+  <union>
+    <!-- query part for: “boundary=administrative” -->
+    <query type="node">
+      <has-kv k="boundary" v="administrative"/>
+      <has-kv k="admin_level" v="6"/>
+      <bbox-query s="23.099694" w="-127.920781" n="51.137831" e="-66.397344"/>
+    </query>
+    <query type="way">
+      <has-kv k="boundary" v="administrative"/>
+            <has-kv k="admin_level" v="6"/>
+      <bbox-query s="23.099694" w="-127.920781" n="51.137831" e="-66.397344"/>
+    </query>
+    <query type="relation">
+      <has-kv k="boundary" v="administrative"/>
+            <has-kv k="admin_level" v="6"/>
+      <bbox-query s="23.099694" w="-127.920781" n="51.137831" e="-66.397344"/>
+    </query>
+  </union>
+  <!-- print results -->
+  <print mode="body"/>
+  <recurse type="down"/>
+  <print mode="skeleton" order="quadtile"/>
+</osm-script>
