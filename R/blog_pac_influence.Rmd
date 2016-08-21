@@ -1,0 +1,305 @@
+---
+title: "Political Action Committees: Businesses Spending Wisely?"
+author: "Tommy Guy"
+date: "August 20, 2016"
+output:
+  html_document:
+    code_folding: hide 
+---
+
+Political Action Committees (PACs) and their opaque cousins Super-PACS are the tip of the special interest sphere. They funnel money directly to candidates, and that money greases the skids of electoral politics. Who are they, and what do they want? This post examines PACs that contribute to House of Representatives Races, looking specifically at Jan to June, 2016. We find that:
+
+* PACs donated \$177 million to House candidates in the first half of this year. About $40\%$ of that money came from Partisan PACs that donate almost exclusively to one party or the other. 
+* The remainder, just over \$100 million dollars, came from a surprising set of business interests who fund both parties and who often appear to have a vested interest in the decisions that the House makes.
+* In addition to the \$100 million donated to candidates directly, influence-buying PACs also donated \$123 million to *other Partisan PACs*! That puts them at nearly a quarter billion dollars donated this year. 
+
+```{r setup, message=FALSE, echo=TRUE, results='hide', warning=FALSE}
+library(ggplot2)
+library(scales)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(tibble)
+```
+
+## A bit of quick data loading
+
+In the interest of transparency and reproducibility, here is the script to process donations from PACs to candidates. 
+Throughout the post, click "code" to see my raw code.
+See the Appendix (Getting the data) for details on my pre-processing in Spark.
+
+```{r}
+dfraw <- as_tibble(jsonlite::fromJSON("C:/tmp/pac_data.json"))
+dfraw <- dfraw %>% select(DONOR_COMMITTEE_FEC_ID, DONOR_CANDIDATE_FEC_ID, FILER_COMMITTEE_ID_NUMBER, NumContributions=`count(CONTRIBUTION_AMOUNT_{F3L_Bundled})`, TotalContributions=`sum(CONTRIBUTION_AMOUNT_{F3L_Bundled})`)
+
+# Load candidates from json.
+candidates <- as_tibble(jsonlite::fromJSON("C:/tmp/candidate.json"))
+candidates <- candidates %>% filter(CAND_PCC != "")  # the rest have to be small!
+
+committees <- as_tibble(jsonlite::fromJSON("C:/tmp/committee.json"))
+committees <- committees %>% select(CMTE_NM, CMTE_ID)
+
+```
+
+```{r}
+
+df_with_candidate <- dfraw %>% left_join(candidates, by=c("FILER_COMMITTEE_ID_NUMBER" = "CAND_PCC"))
+df_with_candidate <- df_with_candidate %>% select(-CAND_ELECTION_YR, -CAND_ST1, -CAND_ST2, -CAND_ZIP)
+
+df_with_committee <- df_with_candidate %>% left_join(committees, by=c("DONOR_COMMITTEE_FEC_ID" = "CMTE_ID"))
+```
+
+I'm going to focus on the two major parties, as they represent the overwhelming majority of money donated: 
+
+```{r fig.height=4}
+df_total_by_party <- df_with_committee %>% 
+  filter(CAND_OFFICE == "H") %>%
+  group_by(CAND_PTY_AFFILIATION, CAND_OFFICE) %>% 
+  summarise(TotalContributions=sum(TotalContributions), NumContributions=sum(NumContributions)) %>% 
+  arrange(desc(NumContributions))  %>%
+  select(-CAND_OFFICE)
+
+ggplot(df_total_by_party, aes(x=reorder(CAND_PTY_AFFILIATION, -NumContributions), y=NumContributions)) + 
+  geom_bar(stat="identity") +
+  ggtitle("Number of Contributions from PACs to each Party's House Races") + 
+  xlab("Party")
+```
+
+Open question for later: are PACS more likely to donate to the two major parties even than individuals? 
+
+For the data nerds, this is how I filtered to the two major parties and re-organized my data to show the contributions to each party.
+
+```{r}
+df <- df_with_committee %>% 
+  filter((CAND_PTY_AFFILIATION == "DEM") | (CAND_PTY_AFFILIATION == "REP"))
+
+# Sum up the contributions
+byPartyAndStatus <- df %>% 
+  group_by(CAND_PTY_AFFILIATION, CAND_OFFICE, DONOR_COMMITTEE_FEC_ID, CMTE_NM) %>% 
+  summarise(TotalContributions=sum(TotalContributions), NumContributions=sum(NumContributions))
+
+# Produce a pivot with two set rows: donor and recid
+byPartyAndStatusNarrow <- byPartyAndStatus %>% 
+  tidyr::unite(Donor, DONOR_COMMITTEE_FEC_ID, CMTE_NM, sep = "__") %>%
+  select(-NumContributions)
+
+byPartyAndStatusWide <- byPartyAndStatusNarrow %>% 
+  tidyr::spread(key = CAND_PTY_AFFILIATION, value=TotalContributions, fill = 0) %>% 
+  separate(Donor, into=c("FEC_ID", "CMTE_NM"), sep = "__") %>% 
+  mutate(TotalContributions=DEM + REP) %>%
+  mutate(DemShare=DEM / TotalContributions) %>%
+  arrange(desc(TotalContributions)) %>%
+  filter(FEC_ID != "")
+
+# Filter to House races.
+houseRacesOnly <- byPartyAndStatusWide %>% filter(CAND_OFFICE == "H") %>% filter(FEC_ID != 'NA') %>%
+  mutate(CumulativeContributions=cumsum(TotalContributions)) %>%
+  mutate(Index=row_number(desc(TotalContributions)))
+  
+houseRacesOnly <- houseRacesOnly %>%
+  mutate(CumulativeContributions=CumulativeContributions / max(houseRacesOnly$CumulativeContributions))
+```
+
+
+## What Motivates a Donation?
+
+As this plot shows, there are two classes of political donation: the fiercely partisan and the rest. Partisan donors give to candidates from only one political party: they represent the tall bars on the extremes of the plot. These donors clearly have an agenda and they give accordingly (though most of the money is actually flowing from party leadership). What about the rest? As we'll see, most of the money is donated by organizations whose donation patterns largely follow the party makeup of the House. They are giving to everyone, and they are giving in vast quantities.
+
+```{r fig.width=8.5}
+houseRacesOnly$Committee <- c(
+  head(houseRacesOnly$CMTE_NM, 6), 
+  replicate(nrow(houseRacesOnly) - 6, "Other")
+)
+
+cbPalette <- c("blue", "red", "#E69F00", "#56B4E9", "#aaaaaa", "#0072B2", "red")
+plt <- ggplot(houseRacesOnly, aes(x=DemShare, weights=TotalContributions, fill=Committee)) + 
+  geom_histogram(aes(y=..count..), bins = 30, alpha=.66) + 
+  scale_fill_manual(values=cbPalette, guide=guide_legend(ncol = 2)) +
+  geom_vline(aes(xintercept=0.43)) +
+  theme(legend.position="bottom") + 
+  theme(legend.text = element_text(size=6)) +
+  annotate("text", x = .55, y = 6000000, label = "Current Makeup of House") +
+  ylab("Amount of Money") +
+  scale_y_continuous(labels = comma) + theme(axis.text.y=element_text(angle=45)) +
+  xlab("Percent of PAC's money going to Democrats") + 
+  ggtitle("PAC money in House Races by Partisanship of the PAC")
+
+show(plt)
+
+
+```
+
+
+## Maintaining Party Loyalty: the Partisans (40% of the total)
+
+The two peaks at the extremes of the x-axis represent money that comes from PACs that donate exclusively to Republicans or exclusively to Democrats. I'll define partisan PACs as any PAC that gives more than $95\%$ of its contributions one only one party. They clearly form a big part of the contribution landscape.
+
+```{r}
+houseRacesOnly <- houseRacesOnly %>% mutate(IsPartisan=ifelse(DemShare > 0.95, "Dem", ifelse(DemShare < 0.05, "Rep", "None")))
+
+houseRacesOnlyForPlot <- houseRacesOnly %>% group_by(IsPartisan) %>% summarise(TotalContributions=sum(TotalContributions))
+
+ggplot(houseRacesOnlyForPlot, aes(x=IsPartisan, weight=TotalContributions, fill=IsPartisan)) + geom_bar()
+```
+
+The two parties are reasonably well-matched, and in total represent 40% of the total money from PACs. What's strange is that the Democrat's funding is far more consolidated. Nearly half of all the partisan Democratic PAC money comes from ACTBLUE.
+
+```{r}
+houseRacesDems <- houseRacesOnly %>% filter(IsPartisan == "Dem") %>% ungroup %>% select(CMTE_NM, TotalContributions)
+
+houseRacesDems <- houseRacesDems %>% 
+  mutate(PercentOfDistributions=100 * TotalContributions / sum(TotalContributions))
+
+knitr::kable(head(houseRacesDems, 10))
+
+```
+
+By contract, the Republicans still have a dominant PAC (Team Ryan, controlled by Speaker Paul Ryan) but this PAC only contributes $20%$ of the total. 
+
+```{r}
+houseRacesReps <- houseRacesOnly %>% filter(IsPartisan == "Rep") %>% ungroup %>% select(CMTE_NM, TotalContributions)
+
+houseRacesReps <- houseRacesReps %>% 
+  mutate(PercentOfDistributions=100 * TotalContributions / sum(TotalContributions))
+
+knitr::kable(head(houseRacesReps, 10))
+
+```
+
+There are a few other differences of note:
+
+* Several of the top contributors for Democrats, including the 2nd, 6th and 9th biggest donors are all union affiliated. This isn't surprising, as Unions have maintained influence in hte Democratic party for years.
+
+* The "Party money" in the Republicans seems to be controlled by multiple funds: Speaker Paul Ryan, Majority Leader Kevin McCarthy and Whip Steve Scalise control funds that are larger than any PAC on either side except ACTBLUE. These three members each control a separate PAC in the top ten: Ryan controls Prosperity Action, McCarthy controls the Majority Committee PAC, and Scalise controls Eye of the Tiger (see [this excellent page at Open Secrets](http://www.opensecrets.org/pacs/industry.php?txt=Q03&cycle=2016)). Only one of the top 9 PACs donating to Republicans isn't controlled by a member of the House: Koch Industries PAC which is controlled by the (in?)famous Koch brothers.
+* They don't show up in the top ten, but a few familiar names make the top twenty: the NRA is 14th for the Republicans (but they also run ads directly) and the American Federation of Teachers (a teacher's union) is thirteenth for the Democrats.
+
+Generally, of the $40%$ of money that is flowing from partisan or idealogical organizations to House candidates, the parties collect roughly equal amounts and the money is heavily dominated by Party interests.
+
+## Buying Influence: The Interests (60% of the total)
+
+At first glance, here are the top ten contributors that donate to candidates in both political parties. 
+
+```{r}
+houseRacesOtherForTable <- houseRacesOnly %>% ungroup %>% 
+  filter(IsPartisan == "None") %>% 
+  select(CMTE_NM, TotalContributions, DemShare)
+knitr::kable(head(houseRacesOtherForTable, 10))
+
+```
+
+Honeywell is a major conglomerate that produces, among other things, the Drones, Missiles, and Rockets for the US Military. [GovermentSpending.us](http://www.governmentspending.us/contractors/honeywell-inc/315) lists \$2.8 *billion* dollars in government contracts. That's probably worth a million in contributions to the branch of the government that is responsible for appropriations! Similarly Boeing, Lockheed Martin and Northrup Grumman are major contractors for the Federal government (particularly the military) and all contribute heavily to both parties. 
+
+Some of the other top entries are interesting: realtors, beer, and telcos represent highly regulated industries. The sugar lobby is interesting: sugar is a highly protected industry in the US with high tariffs for imports. 
+
+The unfortunate pattern here is that everyone donating to both parties seems to have a clearly articulatable relationship with the federal government. They either directly benefit from federal spending or they have a business interest in regulatory programs.
+
+## Just how much money are Influence Buyers Spending?##
+
+So far, we've identified that $60\%$ or just over \$100 million dollars of PAC money contributed to House candidates is contributed by organizations that spread their money across both parties. At least for the top donors, there is a good case to make that they benefit financially from the decisions of the people they are funding. However, this is only telling part of the story: many of these PACs contribute to political PACs as well! 
+
+For the curious, here is the code to identify contributions from influence buyers to partisan PACs. I treat each partisan PAC as a "mixer" that doesn't channel specific donations to specific recipients. This may not be true but the internal routing is rather opaque. I aggregate house and total contributions for each political loyalty PAC and use that to compute the "house "House Ratio". For instance, the Walden for Congress donated \$2000 to House Candidates (namely, Greg Walden (OR) himself), but it also donated \$2000 to a Senate candidate. Therefore, we count only $50\%$ of other PAC contributions to Walden for Congress as contributed to House Races. The National Association of Broadcasters PAC donated \$56,000 to Walden for Congress (out of \$459950 total donated) and we count \$28,000 of that as a contribution to House candidates via a partisan PAC.
+
+
+```{r results='hide'}
+houseRacesOther <- houseRacesOnly %>% ungroup %>% 
+  filter(IsPartisan == "None") %>% 
+  select(FEC_ID, CMTE_NM, Committee, TotalContributions, DemShare) %>%
+  mutate(PercentOfContributions=100 * TotalContributions / sum(TotalContributions))
+
+
+houseRacesPartisan <- houseRacesOnly %>% filter(IsPartisan != "Other")
+
+fromOtherPACToPartisan <- df_with_committee %>% 
+  semi_join(houseRacesPartisan, by=c("FILER_COMMITTEE_ID_NUMBER" = "FEC_ID")) %>%
+  select(DONOR_COMMITTEE_FEC_ID, FILER_COMMITTEE_ID_NUMBER, NumContributions, TotalContributions) %>%
+  semi_join(houseRacesOther, by=c("DONOR_COMMITTEE_FEC_ID" = "FEC_ID"))
+
+fromOtherPACToPartisan %>% summarize(sum(TotalContributions))
+
+fromOtherPACToPartisanAgg <- fromOtherPACToPartisan %>% 
+  group_by(DONOR_COMMITTEE_FEC_ID, FILER_COMMITTEE_ID_NUMBER) %>%
+  summarize(TotalContributions=sum(TotalContributions))
+
+fromOtherPACToPartisanAgg %>% ungroup %>% summarize(sum(TotalContributions))
+
+# try to get the percent spent on House races.
+contributionsByIdOffice <- byPartyAndStatusWide %>% 
+  semi_join(houseRacesPartisan, by="FEC_ID") %>%
+  group_by(FEC_ID) %>%
+  summarize(TotalContributions=sum(TotalContributions))
+
+contributionsByIdOffice %>% ungroup %>% summarize(sum(TotalContributions))
+
+contributionsByIdHouse <- byPartyAndStatusWide %>% 
+  filter(CAND_OFFICE == "H") %>%
+  semi_join(houseRacesPartisan, by="FEC_ID") %>%
+  group_by(FEC_ID) %>%
+  summarize(HouseContributions=sum(TotalContributions))
+
+contributionsByIdHouse %>% ungroup %>% summarize(sum(HouseContributions))
+
+  
+contributionHouseRatio <- contributionsByIdOffice %>% 
+  left_join(contributionsByIdHouse) %>%
+  mutate(HouseRatio=HouseContributions / TotalContributions)
+
+contributionHouseRatio %>% ungroup %>% summarize(sum(HouseContributions))
+
+contributionHouseRatio %>% filter(HouseRatio < 1)
+
+contributionHouseRatio <- select(contributionHouseRatio, FEC_ID, HouseRatio)
+
+fromOtherPACToPartisanHouseOnly <- fromOtherPACToPartisanAgg %>% 
+  inner_join(contributionHouseRatio, by=c("FILER_COMMITTEE_ID_NUMBER" = "FEC_ID")) %>%
+  mutate(HouseContributions=TotalContributions * HouseRatio)
+
+fromOtherPACToPartisanHouseOnly %>% ungroup %>% summarize(sum(HouseContributions))
+```
+
+So what do we learn? PACs labeled as "other" PACs in our data set contributed \$123 million to PACs listed as Partisan PACs in our data set in addition to the \$107 million contributed to candidates directly! And who are the largest donors?
+
+```{r}
+
+# Get biggest PAC contributors 
+PACToPartisanBySize <- fromOtherPACToPartisanHouseOnly %>% 
+  group_by(DONOR_COMMITTEE_FEC_ID) %>% summarize(TotalContributions=sum(HouseContributions)) %>%
+  arrange(desc(TotalContributions))
+  
+
+# Get biggest PAC contributors 
+PACToPartisanBySize <- fromOtherPACToPartisanHouseOnly %>% 
+  group_by(DONOR_COMMITTEE_FEC_ID) %>% summarize(TotalContributions=sum(HouseContributions)) %>%
+  arrange(desc(TotalContributions))
+  
+PACKey <- houseRacesOther %>% select(FEC_ID, CMTE_NM)
+
+knitr::kable(head(PACToPartisanBySize %>% 
+  left_join(PACKey, by=c("DONOR_COMMITTEE_FEC_ID" = "FEC_ID")) %>%
+  select(`Committee Name`=CMTE_NM, TotalContributions), 10))
+```
+
+## Conclusion: Does it Matter?
+
+Lol, I just run the numbers. That being said, I'm a little concerned. Honeywell's donations to PACs and candidates *for the House races alone* are equivalent to the maximum donation for over 88,000 individual contributors. Moreover, their ability to concentrate funds, to give to every single person on a committee or to the give extensively to the party leadership who then dispense funds within their parties implies a considerable ability to influence policy. When a company receives millions or even billions in direct contracts from the government and then spends millions to influence the very people setting the budget, I think that's concerning.
+
+
+## Getting the data
+
+The first step in my data collection uses [OpenFEC](http://www.github.com/guyrt/openfec) to collect all transactions to registered Committees and PACs in the federal elections. 
+
+I filtered to transactions from registered PACs and Party Organizations by filtering to SA11B and SA11C transactions in Spark using the script found [here](https://github.com/guyrt/openfec/blob/master/spark_analysis/pac_contributions.scala). 
+
+
+## Appendix
+
+This is the python program I used to convert my 1-dict-per-line committee and candidate lists into actual JSON blobs suitable for loading into R.
+
+```
+import sys
+
+f = open(sys.argv[1], 'r').read()
+f = f.split("\n")
+f = [ff for ff in f if ff]
+ff = ','.join(f)
+print('[' + ff + ']')
+```
