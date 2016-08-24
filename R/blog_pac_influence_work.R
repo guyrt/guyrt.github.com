@@ -260,21 +260,23 @@ View(df_with_committee %>% filter(DONOR_COMMITTEE_FEC_ID == "C00303024") %>% arr
 # Figure out how much money is given to other pacs.
 #
 
-houseRacesPartisan <- houseRacesOnly %>% filter(IsPartisan != "Other")
+houseRacesPartisan <- houseRacesOnly %>% filter(IsPartisan != "Other") %>% select(FEC_ID, IsPartisan)
 
 fromOtherPACToPartisan <- df_with_committee %>% 
-  semi_join(houseRacesPartisan, by=c("FILER_COMMITTEE_ID_NUMBER" = "FEC_ID")) %>%
-  select(DONOR_COMMITTEE_FEC_ID, FILER_COMMITTEE_ID_NUMBER, NumContributions, TotalContributions) %>%
+  inner_join(houseRacesPartisan, by=c("FILER_COMMITTEE_ID_NUMBER" = "FEC_ID")) %>%
+  select(DONOR_COMMITTEE_FEC_ID, FILER_COMMITTEE_ID_NUMBER, NumContributions, TotalContributions, IsPartisan) %>%
   semi_join(houseRacesOther, by=c("DONOR_COMMITTEE_FEC_ID" = "FEC_ID"))
 
 
 fromOtherPACToPartisan %>% summarize(sum(TotalContributions))
+fromOtherPACToPartisan %>% group_by(IsPartisan) %>% summarize(sum(TotalContributions))
 
 fromOtherPACToPartisanAgg <- fromOtherPACToPartisan %>% 
-  group_by(DONOR_COMMITTEE_FEC_ID, FILER_COMMITTEE_ID_NUMBER) %>%
+  group_by(DONOR_COMMITTEE_FEC_ID, FILER_COMMITTEE_ID_NUMBER, IsPartisan) %>%
   summarize(TotalContributions=sum(TotalContributions))
 
 fromOtherPACToPartisanAgg %>% ungroup %>% summarize(sum(TotalContributions))
+fromOtherPACToPartisanAgg %>% group_by(IsPartisan) %>% summarize(sum(TotalContributions))
 
 
 # try to get the percent spent on House races.
@@ -309,17 +311,40 @@ fromOtherPACToPartisanHouseOnly <- fromOtherPACToPartisanAgg %>%
   mutate(HouseContributions=TotalContributions * HouseRatio)
 
 fromOtherPACToPartisanHouseOnly %>% ungroup %>% summarize(sum(HouseContributions))
+fromOtherPACToPartisanHouseOnly %>% group_by(IsPartisan) %>% summarize(sum(TotalContributions))
+
 
 # Get biggest PAC contributors 
 PACToPartisanBySize <- fromOtherPACToPartisanHouseOnly %>% 
-  group_by(DONOR_COMMITTEE_FEC_ID) %>% summarize(TotalContributions=sum(HouseContributions)) %>%
-  arrange(desc(TotalContributions))
+  group_by(DONOR_COMMITTEE_FEC_ID, IsPartisan) %>% summarize(TotalContributions=sum(HouseContributions)) %>%
+  arrange(desc(TotalContributions)) %>% 
+  spread(IsPartisan, value=TotalContributions) %>% select(-None) %>% 
+  mutate(TotalContributions=Rep+Dem)
   
 PACKey <- houseRacesOther %>% select(FEC_ID, CMTE_NM)
 
-PACToPartisanBySize %>% 
+PACToPartisanBySizeAgg <- PACToPartisanBySize %>% ungroup %>%
   left_join(PACKey, by=c("DONOR_COMMITTEE_FEC_ID" = "FEC_ID")) %>%
-  select(CommitteeName=CMTE_NM, TotalContributions)
+  select(CommitteeName=CMTE_NM, Dem, Rep, TotalContributions) %>% 
+  mutate(DemShare=Dem/TotalContributions) %>%
+  arrange(desc(TotalContributions))
 
+
+#knitr::kable(PACToPartisanBySizeAgg)
+
+
+plt <- ggplot(PACToPartisanBySizeAgg, aes(x=DemShare, weights=TotalContributions)) + 
+  geom_histogram(aes(y=..count..), bins = 30, alpha=.66) + 
+#  scale_fill_manual(values=cbPalette, guide=guide_legend(ncol = 2)) +
+  geom_vline(aes(xintercept=0.43)) +
+  theme(legend.position="bottom") + 
+  theme(legend.text = element_text(size=6)) +
+  annotate("text", x = .55, y = 6000000, label = "Current Makeup of House") +
+  ylab("Amount of Money") +
+  scale_y_continuous(labels = comma) + theme(axis.text.y=element_text(angle=45)) +
+  xlab("Percent of Influencer PAC's money going to Democratic PACs") + 
+  ggtitle("Influence Buying PAC to Political PAC Transfers")
+
+show(plt)
 
 

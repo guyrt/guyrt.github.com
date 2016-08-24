@@ -1,7 +1,7 @@
 ---
-title: "Political Action Committees: Businesses Spending Wisely?"
+title: "Political Action Committees: Politics Inc."
 author: "Tommy Guy"
-date: "August 20, 2016"
+date: "August 20, 2016 (Modified Aug 23, 2016)"
 output:
   html_document:
     code_folding: hide 
@@ -180,6 +180,7 @@ Generally, of the $40%$ of money that is flowing from partisan or idealogical or
 At first glance, here are the top ten contributors that donate to candidates in both political parties. 
 
 ```{r}
+
 houseRacesOtherForTable <- houseRacesOnly %>% ungroup %>% 
   filter(IsPartisan == "None") %>% 
   select(CMTE_NM, TotalContributions, DemShare)
@@ -201,26 +202,33 @@ For the curious, here is the code to identify contributions from influence buyer
 
 
 ```{r results='hide'}
+#
+# Figure out how much money is given to other pacs.
+#
+
 houseRacesOther <- houseRacesOnly %>% ungroup %>% 
   filter(IsPartisan == "None") %>% 
   select(FEC_ID, CMTE_NM, Committee, TotalContributions, DemShare) %>%
   mutate(PercentOfContributions=100 * TotalContributions / sum(TotalContributions))
 
-
-houseRacesPartisan <- houseRacesOnly %>% filter(IsPartisan != "Other")
+houseRacesPartisan <- houseRacesOnly %>% filter(IsPartisan != "Other") %>% select(FEC_ID, IsPartisan)
 
 fromOtherPACToPartisan <- df_with_committee %>% 
-  semi_join(houseRacesPartisan, by=c("FILER_COMMITTEE_ID_NUMBER" = "FEC_ID")) %>%
-  select(DONOR_COMMITTEE_FEC_ID, FILER_COMMITTEE_ID_NUMBER, NumContributions, TotalContributions) %>%
+  inner_join(houseRacesPartisan, by=c("FILER_COMMITTEE_ID_NUMBER" = "FEC_ID")) %>%
+  select(DONOR_COMMITTEE_FEC_ID, FILER_COMMITTEE_ID_NUMBER, NumContributions, TotalContributions, IsPartisan) %>%
   semi_join(houseRacesOther, by=c("DONOR_COMMITTEE_FEC_ID" = "FEC_ID"))
 
+
 fromOtherPACToPartisan %>% summarize(sum(TotalContributions))
+fromOtherPACToPartisan %>% group_by(IsPartisan) %>% summarize(sum(TotalContributions))
 
 fromOtherPACToPartisanAgg <- fromOtherPACToPartisan %>% 
-  group_by(DONOR_COMMITTEE_FEC_ID, FILER_COMMITTEE_ID_NUMBER) %>%
+  group_by(DONOR_COMMITTEE_FEC_ID, FILER_COMMITTEE_ID_NUMBER, IsPartisan) %>%
   summarize(TotalContributions=sum(TotalContributions))
 
 fromOtherPACToPartisanAgg %>% ungroup %>% summarize(sum(TotalContributions))
+fromOtherPACToPartisanAgg %>% group_by(IsPartisan) %>% summarize(sum(TotalContributions))
+
 
 # try to get the percent spent on House races.
 contributionsByIdOffice <- byPartyAndStatusWide %>% 
@@ -253,7 +261,41 @@ fromOtherPACToPartisanHouseOnly <- fromOtherPACToPartisanAgg %>%
   inner_join(contributionHouseRatio, by=c("FILER_COMMITTEE_ID_NUMBER" = "FEC_ID")) %>%
   mutate(HouseContributions=TotalContributions * HouseRatio)
 
-fromOtherPACToPartisanHouseOnly %>% ungroup %>% summarize(sum(HouseContributions))
+#fromOtherPACToPartisanHouseOnly %>% ungroup %>% summarize(sum(HouseContributions))
+
+# Get biggest PAC contributors 
+PACToPartisanBySize <- fromOtherPACToPartisanHouseOnly %>% 
+  group_by(DONOR_COMMITTEE_FEC_ID, IsPartisan) %>% summarize(TotalContributions=sum(HouseContributions)) %>%
+  arrange(desc(TotalContributions)) %>% 
+  spread(IsPartisan, value=TotalContributions) %>% select(-None) %>% 
+  mutate(TotalContributions=Rep+Dem)
+  
+PACKey <- houseRacesOther %>% select(FEC_ID, CMTE_NM)
+
+PACToPartisanBySizeAgg <- PACToPartisanBySize %>% ungroup %>%
+  left_join(PACKey, by=c("DONOR_COMMITTEE_FEC_ID" = "FEC_ID")) %>%
+  select(CommitteeName=CMTE_NM, Dem, Rep, TotalContributions) %>% 
+  mutate(DemShare=Dem/TotalContributions) %>%
+  arrange(desc(TotalContributions))
+
+
+#knitr::kable(PACToPartisanBySizeAgg)
+
+
+plt <- ggplot(PACToPartisanBySizeAgg, aes(x=DemShare, weights=TotalContributions)) + 
+  geom_histogram(aes(y=..count..), bins = 30, alpha=.66) + 
+#  scale_fill_manual(values=cbPalette, guide=guide_legend(ncol = 2)) +
+  geom_vline(aes(xintercept=0.43)) +
+  theme(legend.position="bottom") + 
+  theme(legend.text = element_text(size=6)) +
+  annotate("text", x = .55, y = 6000000, label = "Current Makeup of House") +
+  ylab("Amount of Money") +
+  scale_y_continuous(labels = comma) + theme(axis.text.y=element_text(angle=45)) +
+  xlab("Percent of Influencer PAC's money going to Democratic PACs") + 
+  ggtitle("Influence Buying PAC to Political PAC Transfers")
+
+show(plt)
+
 ```
 
 So what do we learn? PACs labeled as "other" PACs in our data set contributed \$123 million to PACs listed as Partisan PACs in our data set in addition to the \$107 million contributed to candidates directly! And who are the largest donors?
