@@ -6,7 +6,7 @@ data {
 }
 parameters {
   matrix[N, S] beta; // sector weights
-  vector[N] alpha;
+  real alpha; // intercept
   real<lower=0> sigma;
   
   real alpha1;
@@ -14,14 +14,22 @@ parameters {
   
   real alpha2;
   real<lower=0> sigma2;
+
 }
 model {
-  beta[0, :] ~ normal(1, 2.5);
-  alpha[0] ~ normal(0, 1);
+  real vmult;
+  
+  beta[1, :] ~ normal(1, 2.5);
+
   for (n in 2:N) {
     beta[n, :] ~ normal(alpha1 * beta[n-1, :], sigma1);
-    alpha[n] ~ normal(alpha2 * alpha[n-1], sigma2);
+
+    // vector mult
+    vmult = 0;
+    for (k in 1:S) {
+      vmult = vmult + sectors[n, k] * beta[n, k];
+    }
     
-    vti[n] ~ normal(alpha[n] + sectors[n, :] * beta[n, :]', sigma);
+    vti[n] ~ normal(alpha + vmult, sigma);
   }
 }
