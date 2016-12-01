@@ -11,18 +11,14 @@ parameters {
   
   real alpha1;
   real<lower=0> sigma1;
-  
-  real alpha2;
-  real<lower=0> sigma2;
-
 }
 model {
   real vmult;
   
-  beta[1, :] ~ normal(1, 2.5);
+  beta[1, :] ~ cauchy(0, 2.5);
 
   for (n in 2:N) {
-    beta[n, :] ~ normal(alpha1 * beta[n-1, :], sigma1);
+    beta[n, :] ~ cauchy(alpha1 * beta[n-1, :], sigma1); // need to investigate this.
 
     // vector mult
     vmult = 0;
@@ -30,6 +26,6 @@ model {
       vmult = vmult + sectors[n, k] * beta[n, k];
     }
     
-    vti[n] ~ normal(alpha + vmult, sigma);
+    vti[n] ~ cauchy(alpha + vmult, sigma);
   }
 }
