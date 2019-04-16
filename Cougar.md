@@ -102,9 +102,11 @@ very high. The cost of not connecting two edges is equal to the cost of the next
 I'm not sure how much more expensive my algorithm is than the BlossomV optimal because I
 haven't written BlossomV yet. But inspection (see below) suggests that it's not bad.
 
-TODO optimal path.
+![Image of Cougar with Route](images/cougar/minimize_regret_3_route.PNG)
 
-<<<here>>>
+My cost function didn't take elevation into account: some trails in Cougar are very steep and it may be advantageous to take those in a particular direction. However, switching to a graph with bidirectional, differently weighted edges (called the Windy Postman Problem) introduces an NP problem. Moreover, I'm just not sure how I want to weight elevation vs distance. For instance, it is likely better to walk up the very steep trail sections rather than run down them. Walking is part of ultra running, and if you are walking anyway you might as well put as much elevation in the bank as you can!
+
+I decided to allow leaving and re-entering the park on my route. You can see examples where the route does leave and reenter in the northeast and southeast corners.
 
 A few addendum
 ---------------
