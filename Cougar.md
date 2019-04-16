@@ -14,7 +14,7 @@ The trouble is the park layout itself. The picture below shows a typical interse
 either Deceiver twice
 or either the east or west leg of Shy Bear twice. So what's the most efficient way to cover the entire park?
 
-![Image of Shy Bear](images/cougar/osm_shybear.PNG)
+![Image of Shy Bear](images/cougar/osm_shybear.png)
 
 Here's a route that covers 74.5 total miles. In the process, I computed 55 miles of total trails in the park, so it has 20 miles of repetition.
 
@@ -40,7 +40,7 @@ Several rounds of cleaning removed unnecessary ways like [buildings](https://git
 I also classified trails and roads. The categories are trails in the park that required running, roads in the park I could use as byways, and trails or roads that are outside the park that I could choose to use as "shortcuts" between required running.
 Identifying which ways are in the park uses a triangulation method called [Ear Clipping](https://github.com/guyrt/routefinder/blob/master/src/RouteFinder/RouteCleaner/PolygonUtils/PolygonTriangulation.cs) to convert Cougar Mountain Park into dozens of triangles. Once the park is a set of triangles, it's trivial to determine if any node falls into one of the triangles and therefore into the park. The map below shows the results of my triangularization. Clearly some triangles are suboptimal.
 
-![Image of Cougar with Triangles](images/cougar/trianges.PNG)
+![Image of Cougar with Triangles](images/cougar/triangles.PNG)
 
 The results are below. Red trails must be run. Blue roads were in the park but aren't required running. Gray lines are trails or roads that fall outside of the park boundaries.
 
