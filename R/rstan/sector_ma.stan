@@ -11,18 +11,14 @@ parameters {
   
   real alpha1;
   real<lower=0> sigma1;
-  
-  real alpha2;
-  real<lower=0> sigma2;
-
 }
 model {
   real vmult;
   
-  beta[1, :] ~ normal(1, 2.5);
+  beta[1, :] ~ normal(0, 1);
 
   for (n in 2:N) {
-    beta[n, :] ~ normal(alpha1 * beta[n-1, :], sigma1);
+    beta[n, :] ~ normal(alpha1 * beta[n-1, :], sigma1); // need to investigate this.
 
     // vector mult
     vmult = 0;
