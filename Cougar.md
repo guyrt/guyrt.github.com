@@ -1,4 +1,4 @@
-Run Every Trail in Cougar Mountain State Park
+Run Every Trail in Cougar Mountain Regional Park
 =============================================
 
 (image of park)
