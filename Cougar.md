@@ -78,6 +78,7 @@ even degree.
 
 
 So the total algorithm is:
+
 0) Build a graph from the trail map.
 1) Find a set of edges to duplicate so that every node has even degree. (This is the hard part.)
 2) Find non-overlapping circuits in that multi-graph.
