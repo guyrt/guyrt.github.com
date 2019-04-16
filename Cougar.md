@@ -44,7 +44,7 @@ Identifying which ways are in the park uses a triangulation method called [Ear C
 
 The results are below. Red trails must be run. Blue roads were in the park but aren't required running. Gray lines are trails or roads that fall outside of the park boundaries.
 
-![Image of Containment](images/cougar/labeled_ways.png)
+![Image of Containment](images/cougar/labeled_ways.PNG)
 
 2: Route Finding
 -----------------
