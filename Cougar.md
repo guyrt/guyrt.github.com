@@ -20,8 +20,8 @@ Here's a route that covers 74.5 total miles. In the process, computed 55 miles o
 
 Below, I'll detail how I gathered data and estimated an optimal route.
 
-1) Getting and Cleaning (and Cleaning) Some Data
----------------------------------------------
+1: Getting and Cleaning (and Cleaning) Some Data
+-------------------------------------------------
 
 All of my code can be found in [this GitHub repo](http://github.com/guyrt/routefinder/)
 
@@ -44,7 +44,7 @@ The results are below. Red trails must be run. Blue roads were in the park but a
 
 TODO - containment
 
-2) Route Finding
+2: Route Finding
 -----------------
 
 All of my route finding code can be found in [RouteFinder](https://github.com/guyrt/routefinder/tree/master/src/RouteFinder/RouteFinder) in the repo, and [GraphBuilder.cs](https://github.com/guyrt/routefinder/blob/master/src/RouteFinder/RouteFinderCmd/GraphBuilder.cs) is a good starting point.
