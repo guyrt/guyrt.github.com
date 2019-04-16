@@ -18,7 +18,7 @@ or either the east or west leg of Shy Bear twice. So what's the most efficient w
 
 Here's a route that covers 74.5 total miles. In the process, I computed 55 miles of total trails in the park, so it has 20 miles of repetition. The blue lines below are run once. Red lines are duplicated on the optimal route. The odd, short yellow or black section get covered more than once.
 
-![Image of Cougar with Triangles](images/cougar/minimize_regret_3_route.PNG)
+![Image of Cougar with Route](images/cougar/minimize_regret_3_route.PNG)
 
 Below, I'll detail how I gathered data and estimated an optimal route.
 
@@ -44,7 +44,7 @@ Identifying which ways are in the park uses a triangulation method called [Ear C
 
 The results are below. Red trails must be run. Blue roads were in the park but aren't required running. Gray lines are trails or roads that fall outside of the park boundaries.
 
-TODO - containment
+![Image of Containment](images/cougar/labeled_ways.png)
 
 2: Route Finding
 -----------------
