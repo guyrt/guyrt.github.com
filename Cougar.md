@@ -16,9 +16,9 @@ or either the east or west leg of Shy Bear twice. So what's the most efficient w
 
 ![Image of Shy Bear](images/cougar/osm_shybear.png)
 
-Here's a route that covers 74.5 total miles. In the process, I computed 55 miles of total trails in the park, so it has 20 miles of repetition.
+Here's a route that covers 74.5 total miles. In the process, I computed 55 miles of total trails in the park, so it has 20 miles of repetition. The blue lines below are run once. Red lines are duplicated on the optimal route. The odd, short yellow or black section get covered more than once.
 
-(put conclusion here with picture of route)
+![Image of Cougar with Triangles](images/cougar/minimize_regret_3_route.PNG)
 
 Below, I'll detail how I gathered data and estimated an optimal route.
 
