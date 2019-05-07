@@ -16,7 +16,7 @@ or either the east or west leg of Shy Bear twice. So what's the most efficient w
 
 ![Image of Shy Bear](images/cougar/osm_shybear.png)
 
-Here's a route that covers 74.5 total miles. In the process, I computed 55 miles of total trails in the park, so it has 20 miles of repetition. The blue lines below are run once. Red lines are duplicated on the optimal route. The odd, short yellow or black section get covered more than once.
+Here's a route that covers 74.5 total kilometers. In the process, I computed 55 km of total trails in the park, so it has 20 km of repetition. The blue lines below are run once. Red lines are duplicated on the optimal route. The odd, short yellow or black section get covered more than once.
 
 ![Image of Cougar with Route](images/cougar/minimize_regret_3_route.PNG)
 
@@ -113,4 +113,4 @@ A few addendum
 
 I assumed that the trail network is connected. Practically speaking, this was true except for a tiny trail that crosses a corner of the park in the southwest corner.
 
-Technically, my regret minimization algorithm looks at the difference between the best connection and the average of the next 2 connections. This is because sometimes your greedy algorithm will end up selecting a connection for a node that is farther down the list. I tried various values for the number of connections to average. Just using 2 was suboptimal (76 miles) while larger numbers were all within a few yards of the same.
+Technically, my regret minimization algorithm looks at the difference between the best connection and the average of the next 2 connections. This is because sometimes your greedy algorithm will end up selecting a connection for a node that is farther down the list. I tried various values for the number of connections to average. Just using 2 was suboptimal (76 km) while larger numbers were all within a few yards of the same.
