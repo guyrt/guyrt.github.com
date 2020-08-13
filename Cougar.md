@@ -60,14 +60,16 @@ pair of nodes have two ways that connect them and a few other oddities.
 
 The theoretical problem I'm solving is the [Route Inspection Problem](https://en.wikipedia.org/wiki/Route_inspection_problem), also known as the Chinese Postman Problem. Formally, the problem is to find the shortest circuit that visits every edge in an undirected, weighted graph. In trail runner terms, find the minimal mileage to run every trail at least once. 
 
-If every node in a graph has even degree, then the problem is trivial. (Degree is the 
+If every node in a graph has even degree, then any route will do. (Degree is the 
 number of edges meet at a node.) Starting in the parking lot, follow nodes at random and 
 mark them as followed. If you arrive back at the parking lot, there are no unmarked edges 
 leaving the parking lot, and there are unvisited edges in the graph, then simply pick a 
-node on your path with unmarked edges. There will be at least one such node on a connected 
+node on your path with unmarked edges and leave in a random unmarked direction. 
+There will be at least one such node on a connected 
 graph, and it will have at least 2 unmarked edges! Follow random trails until you arrive 
 back at that edge. Repeat the process until no more edges are unmarked. A cool property of 
-graphs with only even-degree edges is that every path will eventually end up back where it started. I actually [use this fact](https://github.com/guyrt/routefinder/blob/master/src/RouteFinder/RouteFinder/RouteFinder.cs#L115) as a sanity check in my algorithm.
+graphs with only even-degree edges is that every path that follows novel edges will eventually
+end up back where it started. I actually [use this fact](https://github.com/guyrt/routefinder/blob/master/src/RouteFinder/RouteFinder/RouteFinder.cs#L115) as a sanity check in my algorithm.
 
 Practically, the solution to the Route Inspection Problem hinges on nodes with odd degree. 
 Every odd degree node represents "waste" since a path that enters and leaves the node on 
