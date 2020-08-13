@@ -3,20 +3,20 @@ Run Every Trail in Cougar Mountain Regional Park
 
 ![Image of Cougar](images/cougar/osm_park.PNG)
 
-Hey here's a terrible idea! Let's run every trail in Cougar all at once!
+Hey, here's a terrible idea! Let's run every trail in Cougar all at once!
 
 Cougar Mountain is park near Seattle with "about 40 miles" of hilly trails. 
 It's pretty popular with the trail running crowd in Seattle and surrounding towns,
 especially for mid-week training runs. This winter I started wondering what it would
 take to run it all at once.
 
-The trouble is the park layout itself. The picture below shows a typical intersection wiht three trails. Any trip that covers all Shy Bear and the Deceiver Trail must cover 
+The trouble is the park layout itself. The picture below shows a typical intersection with three trails. Any trip that covers all of Shy Bear and the Deceiver Trail must cover 
 either Deceiver twice
-or either the east or west leg of Shy Bear twice. So what's the most efficient way to cover the entire park?
+or at least the east or west leg of Shy Bear twice. So what's the most efficient way to cover the entire park?
 
 ![Image of Shy Bear](images/cougar/osm_shybear.png)
 
-Here's a route that covers 74.5 total kilometers. In the process, I computed 55 km of total trails in the park, so it has 20 km of repetition. The blue lines below are run once. Red lines are duplicated on the optimal route. The odd, short yellow or black section get covered more than once.
+Here's a route that covers 74.5 total kilometers. In the process, I computed 55 km of total trails in the park, so it has 20 km of repetition. The blue lines below are run once. Red lines are duplicated on the optimal route. The odd, short yellow or black section get covered more than twice.
 
 ![Image of Cougar with Route](images/cougar/minimize_regret_3_route.PNG)
 
