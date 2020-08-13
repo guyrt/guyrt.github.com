@@ -72,7 +72,7 @@ graphs with only even-degree edges is that every path will eventually end up bac
 Practically, the solution to the Route Inspection Problem hinges on nodes with odd degree. 
 Every odd degree node represents "waste" since a path that enters and leaves the node on 
 different trails will always use an even number of edges. At some point, to visit the 
-final edge, the path must re-traverse one edge on the vertex. A (not necessarily optimal) 
+final edge, the path must re-traverse one edge on the vertex. Every valid
 route inspection path adds copies of some edges to the graph so that every vertex has an 
 even degree.
 
