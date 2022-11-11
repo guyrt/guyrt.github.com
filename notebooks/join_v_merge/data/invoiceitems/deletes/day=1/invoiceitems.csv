@@ -1,1 +1,9 @@
-""
+,invoice_item_id,invoice,count,product
+0,de007a07-2b00-42ea-bd7b-d5fed9f62264,inv_28,1,p_101
+1,beb6c7fd-56c0-41da-88ef-15614ba9b229,inv_28,1,p_33
+2,7d271c01-4a75-40d9-9b82-104340e9b414,inv_28,2,p_104
+3,58d0bbc9-3174-4478-bffd-1a5cb3838048,inv_821,4,p_62
+4,c0d95654-021e-4668-861d-3fb9a16d77a1,inv_821,1,p_22
+5,f9af4398-124c-445e-be3f-693571704a49,inv_821,1,p_48
+6,de3aecd2-84ad-4d94-b3ab-8765f5f4c74d,inv_821,1,p_25
+7,8b2f2e39-7fbd-4a7c-9a89-347c36bd8c2d,inv_979,2,p_47
