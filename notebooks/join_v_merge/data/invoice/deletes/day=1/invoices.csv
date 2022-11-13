@@ -1,6 +1,5 @@
 ,invoice_id,customer,status,invoice_modified,invoice_created
-0,inv_313,8a924220-24d8-4fc5-9d43-a1c20a769ea9,sent,day0,day0
-1,inv_334,f9e4bd75-5cfe-48de-a6b2-b25b66eef8b0,sent,day0,day0
-2,inv_436,4bee08a6-e091-40de-b453-d96178a9b002,sent,day0,day0
-3,inv_867,2889684e-1010-497c-bec0-8658143f090d,sent,day0,day0
-4,inv_910,e1083928-0ad6-4522-b0a3-befa21140c7f,sent,day0,day0
+0,inv_587,6024b982-5c4e-4055-8488-3e9d1c7393ba,sent,day0,day0
+1,inv_134,a42c9381-3989-4660-ba88-fe4ceffa48ba,sent,day0,day0
+2,inv_724,ee9c21d7-3479-48cf-882c-eadfffafbbb4,sent,day0,day0
+3,inv_932,e1f2374c-e797-416b-bd13-08c4d08bf414,sent,day0,day0
